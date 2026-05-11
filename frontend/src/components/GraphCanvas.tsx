@@ -62,16 +62,30 @@ export default function GraphCanvas({ entityId, entityName, onUpdate }: Props) {
   }, [data]);
 
   // Filter once, share with both the canvas renderer and the parent insights panel.
+  //
+  // Pipeline:
+  //   1. Drop nodes whose type doesn't match the entity-type slicer (seed always kept).
+  //   2. Drop edges that either touch a dropped node OR don't match the relationship slicer.
+  //   3. Drop nodes that no longer have any surviving edges (seed always kept) —
+  //      this is what makes the relationship slicer behave like a real filter,
+  //      not just an edge-hider.
   const filtered = useMemo<{ visibleNodes: GN[]; visibleEdges: GE[] }>(() => {
     if (!data) return { visibleNodes: [], visibleEdges: [] };
-    // Step 1: filter nodes by entity-type — but always keep the seed visible.
-    const visibleNodes = data.nodes.filter(n => n.id === entityId || entityTypeFilter === "ALL" || n.type === entityTypeFilter);
-    const keep = new Set(visibleNodes.map(n => n.id));
-    // Step 2: edges visible only when both endpoints are kept and rel-type matches.
+
+    const typeAllowed = data.nodes.filter(n =>
+      n.id === entityId || entityTypeFilter === "ALL" || n.type === entityTypeFilter
+    );
+    const typeAllowedIds = new Set(typeAllowed.map(n => n.id));
+
     const visibleEdges = data.edges.filter(e =>
-      keep.has(e.source) && keep.has(e.target) &&
+      typeAllowedIds.has(e.source) && typeAllowedIds.has(e.target) &&
       (relTypeFilter === "ALL" || e.type === relTypeFilter)
     );
+
+    const connectedIds = new Set<string>([entityId]);
+    visibleEdges.forEach(e => { connectedIds.add(e.source); connectedIds.add(e.target); });
+    const visibleNodes = typeAllowed.filter(n => connectedIds.has(n.id));
+
     return { visibleNodes, visibleEdges };
   }, [data, entityId, relTypeFilter, entityTypeFilter]);
 
