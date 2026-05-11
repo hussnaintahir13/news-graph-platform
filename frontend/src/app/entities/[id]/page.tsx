@@ -37,8 +37,9 @@ export default function EntityPage() {
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [watched, setWatched] = useState(false);
-  const [auth] = useState(() => getAuth());
+  const [auth, setAuth] = useState<ReturnType<typeof getAuth>>(null);
 
+  useEffect(() => { setAuth(getAuth()); }, []);
   useEffect(() => { api.entity(id).then(setEnt).catch(e => setError((e as Error).message)); }, [id]);
 
   const stats = useMemo(() => {

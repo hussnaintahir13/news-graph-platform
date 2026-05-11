@@ -27,7 +27,8 @@ export default function EntityMultiSelect({ selected, onChange, placeholder = "A
   const [creating, setCreating] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [auth] = useState(() => getAuth());
+  const [auth, setAuth] = useState<ReturnType<typeof getAuth>>(null);
+  useEffect(() => { setAuth(getAuth()); }, []);
   const canCreate = allowCreate && auth && (auth.user.role === "admin" || auth.user.role === "analyst");
 
   useEffect(() => {
