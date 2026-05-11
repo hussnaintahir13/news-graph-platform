@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..models import Article, ArticleEntity, Entity, Relationship_
-from ..schemas import ArticleOut, AskResponse, EntityOut
+from ..schemas import ArticleOut, AskResponse, EntityOut, HypothesisResponse, PairAnalysis
+from ..services import graph_service
 from ..services.embedding_service import cosine, embed
 from ..services.search_service import _semantic
 
@@ -142,3 +143,129 @@ def explain_relationship(db: Session, source_id: str, target_id: str) -> str:
         for r in rels
     ]
     return "Recorded relationships:\n" + "\n".join(lines)
+
+
+def build_hypothesis(db: Session, entity_ids: list[str], max_hops: int = 3, max_paths_per_pair: int = 3) -> HypothesisResponse:
+    """Analyse paths between every pair of seed entities; produce a narrative + supporting articles."""
+    if len(entity_ids) < 2:
+        return HypothesisResponse(
+            statement="Select at least two entities to analyse a connection.",
+            pairs=[], supporting_articles=[],
+        )
+
+    ent_rows = db.execute(select(Entity).where(Entity.id.in_(entity_ids))).scalars().all()
+    entity_map = {e.id: e for e in ent_rows}
+
+    # Build adjacency once, reuse for every pair.
+    adj = graph_service._load_adjacency(db)
+
+    pair_analyses: list[PairAnalysis] = []
+    all_article_ids: set[str] = set()
+
+    for i in range(len(entity_ids)):
+        for j in range(i + 1, len(entity_ids)):
+            a_id, b_id = entity_ids[i], entity_ids[j]
+            paths_edges = graph_service.find_paths(db, a_id, b_id, max_hops=max_hops, max_paths=max_paths_per_pair, adj=adj)
+            path_infos = [graph_service.edges_to_path_info(p, a_id, b_id, entity_map) for p in paths_edges]
+            for p in paths_edges:
+                for edge in p:
+                    if edge.article_id:
+                        all_article_ids.add(edge.article_id)
+            pair_analyses.append(PairAnalysis(
+                from_id=a_id,
+                from_name=entity_map[a_id].name if a_id in entity_map else None,
+                to_id=b_id,
+                to_name=entity_map[b_id].name if b_id in entity_map else None,
+                paths=path_infos,
+                direct=any(p.length == 1 for p in path_infos),
+                indirect=any(p.length > 1 for p in path_infos),
+            ))
+
+    # Supporting articles, in recency order.
+    articles: list[Article] = []
+    if all_article_ids:
+        articles = db.execute(
+            select(Article).where(Article.id.in_(all_article_ids))
+            .order_by(Article.published_at.desc().nulls_last(), Article.created_at.desc())
+            .limit(15)
+        ).scalars().all()
+
+    statement = _build_deterministic_narrative(pair_analyses)
+    ai_used = False
+    polished = _polish_with_openai(statement, pair_analyses, articles)
+    if polished:
+        statement = polished
+        ai_used = True
+
+    return HypothesisResponse(
+        statement=statement,
+        pairs=pair_analyses,
+        supporting_articles=[ArticleOut.model_validate(a) for a in articles],
+        ai_generated=ai_used,
+    )
+
+
+def _build_deterministic_narrative(pairs: list[PairAnalysis]) -> str:
+    parts: list[str] = []
+    no_link: list[tuple[str, str]] = []
+    for p in pairs:
+        a = p.from_name or p.from_id
+        b = p.to_name or p.to_id
+        direct_paths = [x for x in p.paths if x.length == 1]
+        indirect_paths = [x for x in p.paths if x.length > 1]
+
+        if direct_paths:
+            top = direct_paths[0]
+            verb = (top.steps[0].relation_type if top.steps else "MENTIONED_WITH").lower().replace("_", " ")
+            parts.append(f"**{a}** and **{b}** are directly linked ({verb}).")
+        elif indirect_paths:
+            shortest = indirect_paths[0]
+            chain = " → ".join(shortest.chain_names)
+            via = " and ".join(shortest.chain_names[1:-1]) or "an intermediate entity"
+            parts.append(
+                f"**{a}** and **{b}** have no direct link in the index, but they connect via {via}: {chain}. "
+                f"This suggests {a} may be linked to {b} through {via.split(' and ')[0]}."
+            )
+        else:
+            no_link.append((a, b))
+
+    if no_link:
+        for a, b in no_link:
+            parts.append(f"No path was found between **{a}** and **{b}** within {3} hops — they appear unrelated in the current index.")
+
+    if not parts:
+        return "Select at least two entities to analyse a connection."
+    return " ".join(parts)
+
+
+def _polish_with_openai(statement: str, pairs: list[PairAnalysis], articles: Iterable[Article]) -> str | None:
+    if not settings.openai_api_key:
+        return None
+
+    # Build evidence context
+    evidence_lines: list[str] = []
+    for p in pairs:
+        a = p.from_name or p.from_id
+        b = p.to_name or p.to_id
+        for path in p.paths[:3]:
+            chain = " -> ".join(path.chain_names)
+            verbs = ", ".join(s.relation_type.lower().replace("_", " ") for s in path.steps)
+            evidence_lines.append(f"- {a} to {b}: chain {chain} (relations: {verbs})")
+
+    article_lines = []
+    for a in list(articles)[:8]:
+        snippet = (a.summary or (a.content or "")[:200]).replace("\n", " ")
+        article_lines.append(f"- {a.title}: {snippet}")
+
+    user_prompt = (
+        "Below is a deterministic connection analysis and the supporting news articles. "
+        "Write a clear 2-3 sentence hypothesis about how the entities might be related. "
+        "Stay grounded in the evidence; if a connection is only indirect, say so explicitly.\n\n"
+        f"Deterministic analysis:\n{statement}\n\n"
+        f"Path evidence:\n" + "\n".join(evidence_lines) + "\n\n"
+        f"Supporting articles:\n" + "\n".join(article_lines)
+    )
+    return _openai_chat([
+        {"role": "system", "content": "You are a careful news analyst. Only state what the evidence supports. Hedge appropriately."},
+        {"role": "user", "content": user_prompt}
+    ])

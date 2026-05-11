@@ -6,12 +6,13 @@ import { useEffect, useState } from "react";
 import { api, getAuth } from "@/lib/api";
 import type { AuthState } from "@/types";
 import {
-  IArticle, IBell, IBook, IGraph, IHome, ILogIn, ILogOut, ISearch, ISettings, ISpark,
+  IArticle, IBell, IBook, IConnect, IGraph, IHome, ILogIn, ILogOut, ISearch, ISettings, ISpark,
 } from "./Icons";
 
 const NAV: { href: string; label: string; Icon: React.ComponentType<{size?: number; className?: string}>; roles?: string[] }[] = [
   { href: "/", label: "Home", Icon: IHome },
   { href: "/graph", label: "Graph", Icon: IGraph },
+  { href: "/connect", label: "Connect", Icon: IConnect },
   { href: "/articles", label: "Articles", Icon: IArticle },
   { href: "/search", label: "Search", Icon: ISearch },
   { href: "/ask", label: "Ask AI", Icon: ISpark },

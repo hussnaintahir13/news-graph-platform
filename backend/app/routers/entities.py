@@ -5,10 +5,38 @@ from sqlalchemy.orm import Session
 from ..auth import require_roles
 from ..db import get_db
 from ..models import Entity
-from ..schemas import ArticleOut, EntityDetail, EntityOut, RelationshipOut
+from ..schemas import ArticleOut, EntityCreate, EntityDetail, EntityOut, RelationshipOut
 from ..services import ai_service, graph_service
 
 router = APIRouter(prefix="/api/entities", tags=["entities"])
+
+
+def _normalize(name: str) -> str:
+    import re
+    return re.sub(r"\s+", " ", name.strip().lower())
+
+
+@router.post("", response_model=EntityOut, dependencies=[Depends(require_roles("admin", "analyst"))])
+def create_entity(payload: EntityCreate, db: Session = Depends(get_db)):
+    """Manually register an entity. Useful when NLP hasn't yet picked one up
+    or when the user wants to track a concept (e.g. 'missiles')."""
+    name_norm = _normalize(payload.name)
+    existing = db.execute(
+        select(Entity).where(Entity.name_norm == name_norm, Entity.type == payload.type)
+    ).scalar_one_or_none()
+    if existing:
+        return existing
+    ent = Entity(
+        name=payload.name.strip(),
+        name_norm=name_norm,
+        type=payload.type,
+        description=payload.description,
+        mentions=0,
+    )
+    db.add(ent)
+    db.commit()
+    db.refresh(ent)
+    return ent
 
 
 @router.get("", response_model=list[EntityOut], dependencies=[Depends(require_roles())])

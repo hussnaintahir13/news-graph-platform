@@ -87,6 +87,12 @@ class EntityOut(BaseModel):
         from_attributes = True
 
 
+class EntityCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    type: Literal["Person", "Company", "Organization", "Country", "Event", "Product", "Technology", "Narrative", "Concept"] = "Concept"
+    description: Optional[str] = None
+
+
 class EntityDetail(EntityOut):
     relationships: list["RelationshipOut"] = []
     timeline: list["TimelinePoint"] = []
@@ -135,6 +141,58 @@ class TimelinePoint(BaseModel):
     date: datetime
     article_id: str
     title: str
+
+
+# ---------- Multi-entity / paths / hypothesis ----------
+class MultiGraphRequest(BaseModel):
+    entity_ids: list[str]
+    depth: int = 1
+    limit: int = 120
+
+
+class PathStep(BaseModel):
+    relationship_id: str
+    source_entity_id: str
+    source_entity_name: Optional[str] = None
+    target_entity_id: str
+    target_entity_name: Optional[str] = None
+    relation_type: str
+    confidence: float
+    weight: float
+    article_id: Optional[str] = None
+
+
+class PathInfo(BaseModel):
+    from_id: str
+    from_name: Optional[str] = None
+    to_id: str
+    to_name: Optional[str] = None
+    length: int
+    chain_names: list[str] = []  # ordered chain of entity names along the path
+    steps: list[PathStep] = []
+
+
+class PairAnalysis(BaseModel):
+    from_id: str
+    from_name: Optional[str] = None
+    to_id: str
+    to_name: Optional[str] = None
+    paths: list[PathInfo] = []
+    direct: bool = False
+    indirect: bool = False
+
+
+class HypothesisRequest(BaseModel):
+    entity_ids: list[str]
+    max_hops: int = 3
+    max_paths_per_pair: int = 3
+
+
+class HypothesisResponse(BaseModel):
+    statement: str
+    pairs: list[PairAnalysis] = []
+    supporting_articles: list[ArticleOut] = []
+    ai_generated: bool = False
 
 
 # ---------- Search ----------

@@ -38,3 +38,6 @@ export const ICheck = (p: IconProps) => <I {...p}><path d="M4 12l5 5L20 6"/></I>
 export const IClock = (p: IconProps) => <I {...p}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></I>;
 export const ITrend = (p: IconProps) => <I {...p}><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></I>;
 export const ITag = (p: IconProps) => <I {...p}><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1"/></I>;
+export const IX = (p: IconProps) => <I {...p}><path d="M18 6 6 18M6 6l12 12"/></I>;
+export const IConnect = (p: IconProps) => <I {...p}><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12h2M16 7 8 11M16 17l-8-4"/></I>;
+export const IBeaker = (p: IconProps) => <I {...p}><path d="M9 3h6v6l5 9a2 2 0 0 1-1.8 3H5.8A2 2 0 0 1 4 18l5-9V3z"/><path d="M8 14h8"/></I>;

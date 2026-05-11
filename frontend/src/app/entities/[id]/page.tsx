@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { api, getAuth } from "@/lib/api";
 import type { EntityDetail } from "@/types";
 import {
-  IArticle, IBell, IClock, IExternal, IGraph, IInfo, ISearch, ISpark, ITag, ITrend,
+  IArticle, IBell, IClock, IConnect, IExternal, IGraph, IInfo, ISearch, ISpark, ITag, ITrend,
 } from "@/components/Icons";
 
 const TYPE_COLOR: Record<string, string> = {
@@ -118,6 +118,9 @@ export default function EntityPage() {
                 <IBell size={14}/> {watched ? "Watching" : adding ? "Adding…" : "Watch for new mentions"}
               </button>
             )}
+            <Link className="btn-secondary" href={`/connect?entities=${ent.id}`}>
+              <IConnect size={14}/> Connect with another
+            </Link>
             <Link className="btn-ghost" href={`/search?q=${encodeURIComponent(ent.name)}`}>
               <ISearch size={14}/> Search related articles
             </Link>

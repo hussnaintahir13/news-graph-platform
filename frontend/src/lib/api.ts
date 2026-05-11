@@ -1,6 +1,6 @@
 import type {
-  Alert, Article, ArticleDetail, AskResponse, AuthState, Entity, EntityDetail,
-  GraphResponse, SearchHit, Source, Watchlist,
+  Alert, Article, ArticleDetail, AskResponse, AuthState, Entity, EntityDetail, EntityType,
+  GraphResponse, HypothesisResponse, PathInfo, SearchHit, Source, Watchlist,
 } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
@@ -68,6 +68,14 @@ export const api = {
   centrality: (top = 25) => request<{ entity_id: string; name: string; type: string; degree: number }[]>(
     `/api/graph/top/centrality?top=${top}`
   ),
+  multiGraph: (entity_ids: string[], depth = 1, limit = 120) =>
+    request<GraphResponse>("/api/graph/multi", { method: "POST", body: JSON.stringify({ entity_ids, depth, limit }) }),
+  paths: (src: string, dst: string, max_hops = 3, max_paths = 5) =>
+    request<PathInfo[]>(`/api/graph/path/${src}/${dst}?max_hops=${max_hops}&max_paths=${max_paths}`),
+  hypothesis: (entity_ids: string[], max_hops = 3, max_paths_per_pair = 3) =>
+    request<HypothesisResponse>("/api/hypothesis", { method: "POST", body: JSON.stringify({ entity_ids, max_hops, max_paths_per_pair }) }),
+  createEntity: (name: string, type: EntityType = "Concept", description?: string) =>
+    request<Entity>("/api/entities", { method: "POST", body: JSON.stringify({ name, type, description }) }),
 
   search: (q: string, mode: "keyword" | "semantic" | "entity" = "keyword") =>
     request<SearchHit[]>("/api/search", { method: "POST", body: JSON.stringify({ q, mode, limit: 25 }) }),

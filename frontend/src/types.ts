@@ -122,3 +122,44 @@ export interface Alert {
   created_at: string;
   seen: boolean;
 }
+
+export interface PathStep {
+  relationship_id: string;
+  source_entity_id: string;
+  source_entity_name?: string;
+  target_entity_id: string;
+  target_entity_name?: string;
+  relation_type: string;
+  confidence: number;
+  weight: number;
+  article_id?: string | null;
+}
+
+export interface PathInfo {
+  from_id: string;
+  from_name?: string;
+  to_id: string;
+  to_name?: string;
+  length: number;
+  chain_names: string[];
+  steps: PathStep[];
+}
+
+export interface PairAnalysis {
+  from_id: string;
+  from_name?: string;
+  to_id: string;
+  to_name?: string;
+  paths: PathInfo[];
+  direct: boolean;
+  indirect: boolean;
+}
+
+export interface HypothesisResponse {
+  statement: string;
+  pairs: PairAnalysis[];
+  supporting_articles: Article[];
+  ai_generated: boolean;
+}
+
+export type EntityType = "Person" | "Company" | "Organization" | "Country" | "Event" | "Product" | "Technology" | "Narrative" | "Concept";
