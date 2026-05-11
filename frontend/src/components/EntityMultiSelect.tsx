@@ -106,11 +106,11 @@ export default function EntityMultiSelect({ selected, onChange, placeholder = "A
             </button>
           </span>
         ))}
-        <div className="relative flex-1 min-w-[140px]">
-          <ISearch size={14} className="absolute left-1 top-1/2 -translate-y-1/2 text-muted"/>
+        <div className="relative flex-1 min-w-[160px]">
+          <ISearch size={14} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"/>
           <input
             ref={inputRef}
-            className="bg-transparent outline-none w-full pl-6 py-1 text-sm placeholder:text-muted"
+            className="bg-transparent outline-none w-full pl-7 py-1 text-sm placeholder:text-muted"
             placeholder={selected.length === 0 ? placeholder : "Add another…"}
             value={q}
             onChange={e => { setQ(e.target.value); if (e.target.value) setOpen(true); }}

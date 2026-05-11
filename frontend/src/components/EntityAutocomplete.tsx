@@ -75,10 +75,10 @@ export default function EntityAutocomplete({ placeholder = "Search people, compa
   return (
     <div ref={boxRef} className="relative w-full max-w-lg">
       <div className="relative">
-        <ISearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16}/>
+        <ISearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" size={16}/>
         <input
           autoFocus={autoFocus}
-          className="input pl-9"
+          className="input pl-11"
           placeholder={placeholder}
           value={q}
           onChange={e => { setQ(e.target.value); if (e.target.value) setOpen(true); }}

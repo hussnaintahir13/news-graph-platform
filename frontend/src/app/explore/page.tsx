@@ -4,8 +4,10 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import GraphCanvas from "@/components/GraphCanvas";
+import type { GraphCanvasState } from "@/components/GraphCanvas";
 import EntityAutocomplete from "@/components/EntityAutocomplete";
 import EntityMultiSelect from "@/components/EntityMultiSelect";
+import InsightsPanel from "@/components/InsightsPanel";
 import { api } from "@/lib/api";
 import type { Entity, HypothesisResponse, PairAnalysis, PathInfo } from "@/types";
 import {
@@ -28,6 +30,7 @@ function ExploreInner() {
   const [trending, setTrending] = useState<Entity[]>([]);
   const [busy, setBusy] = useState(false);
   const [maxHops, setMaxHops] = useState(3);
+  const [graphView, setGraphView] = useState<GraphCanvasState | null>(null);
 
   useEffect(() => {
     api.centrality(15).then(rows => {
@@ -135,7 +138,10 @@ function ExploreInner() {
       {/* Body */}
       {mode === "single" ? (
         seed ? (
-          <GraphCanvas entityId={seed.id} entityName={seed.name}/>
+          <div className="space-y-5">
+            <GraphCanvas entityId={seed.id} entityName={seed.name} onUpdate={setGraphView}/>
+            <InsightsPanel entityId={seed.id} view={graphView}/>
+          </div>
         ) : (
           <TrendingPicker trending={trending} onPick={pickSeed}/>
         )
@@ -147,25 +153,72 @@ function ExploreInner() {
 }
 
 function TrendingPicker({ trending, onPick }: { trending: Entity[]; onPick: (e: Entity) => void }) {
+  const top3 = trending.slice(0, 3);
+  const rest = trending.slice(3);
+  if (trending.length === 0) {
+    return (
+      <div className="card p-6 text-center text-sm text-muted">
+        <ITrend size={22} className="text-muted mx-auto"/>
+        <p className="mt-2">No entities yet. Trigger an ingest from the <Link className="link" href="/admin">Admin</Link> page or wait for the next scheduled refresh.</p>
+      </div>
+    );
+  }
   return (
-    <div className="card p-6">
-      <div className="flex items-center gap-2 mb-3">
-        <ITrend size={16} className="text-accent"/>
-        <h2 className="font-semibold">Trending entities</h2>
+    <div className="space-y-4">
+      {/* Top-3 hero grid */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <ITrend size={16} className="text-accent"/>
+          <h2 className="font-semibold">Most discussed right now</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {top3.map((c, i) => <HeroTopicCard key={c.id} entity={c} rank={i + 1} onPick={onPick}/>)}
+        </div>
       </div>
-      <p className="text-sm text-muted mb-3">Start with one of the most-mentioned entities, or use the search box above.</p>
-      {trending.length === 0 && (
-        <p className="text-sm text-muted">No entities yet. Trigger an ingest from the <Link className="link" href="/admin">Admin</Link> page or wait for the next scheduled refresh.</p>
+
+      {/* Chip list for the remainder */}
+      {rest.length > 0 && (
+        <div className="card p-4">
+          <div className="section-title mb-2">More trending</div>
+          <div className="flex flex-wrap gap-2">
+            {rest.map(c => (
+              <button key={c.id} className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-sm hover:border-accent hover:shadow-sm transition" onClick={() => onPick(c)}>
+                <span className="font-medium">{c.name}</span>
+                <span className="ml-2 text-xs text-muted">{c.type} · {c.mentions}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
-      <div className="flex flex-wrap gap-2">
-        {trending.map(c => (
-          <button key={c.id} className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-sm hover:border-accent hover:shadow-sm transition" onClick={() => onPick(c)}>
-            <span className="font-medium">{c.name}</span>
-            <span className="ml-2 text-xs text-muted">{c.type} · {c.mentions}</span>
-          </button>
-        ))}
-      </div>
     </div>
+  );
+}
+
+const HERO_GRADIENT = [
+  "linear-gradient(135deg, #3B82F6, #8B5CF6)",
+  "linear-gradient(135deg, #10B981, #06B6D4)",
+  "linear-gradient(135deg, #F59E0B, #EF4444)",
+];
+
+function HeroTopicCard({ entity, rank, onPick }: { entity: Entity; rank: number; onPick: (e: Entity) => void }) {
+  return (
+    <button
+      onClick={() => onPick(entity)}
+      className="card card-hover p-5 text-left relative overflow-hidden group"
+    >
+      <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full opacity-30 group-hover:opacity-50 transition" style={{ background: HERO_GRADIENT[(rank - 1) % HERO_GRADIENT.length] }}/>
+      <div className="relative">
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted">#{rank}</span>
+          <span className="badge-slate text-[10px]">{entity.type}</span>
+        </div>
+        <div className="font-bold text-lg mt-1 leading-snug">{entity.name}</div>
+        <div className="text-xs text-muted mt-1">{entity.mentions} mention{entity.mentions === 1 ? "" : "s"}</div>
+        <div className="mt-4 inline-flex items-center gap-1 text-sm text-accent font-medium group-hover:gap-2 transition-all">
+          Explore →
+        </div>
+      </div>
+    </button>
   );
 }
 
