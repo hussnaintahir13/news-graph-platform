@@ -34,10 +34,15 @@ def get_entity(entity_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Entity not found")
 
     detail = EntityDetail.model_validate(e)
-    detail.description = e.description or ai_service.summarise_entity(db, e)
-    if detail.description and not e.description:
-        e.description = detail.description
-        db.commit()
+    if not e.description:
+        try:
+            generated = ai_service.summarise_entity(db, e)
+            if generated:
+                e.description = generated
+                detail.description = generated
+                db.commit()
+        except Exception:
+            db.rollback()  # description is best-effort; never 500 the page
 
     rels = graph_service.entity_relationships(db, entity_id)
     name_map = {x.id: x.name for x in db.execute(select(Entity).where(Entity.id.in_(

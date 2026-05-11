@@ -10,7 +10,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..models import Article, Entity, Relationship_
+from ..models import Article, ArticleEntity, Entity, Relationship_
 from ..schemas import ArticleOut, AskResponse, EntityOut
 from ..services.embedding_service import cosine, embed
 from ..services.search_service import _semantic
@@ -57,11 +57,20 @@ def _openai_chat(messages: list[dict]) -> str | None:
 
 
 def summarise_entity(db: Session, entity: Entity) -> str:
-    arts = db.execute(
-        select(Article).join(Article.entities).where(Article.entities.any(entity_id=entity.id))
-        .order_by(Article.created_at.desc()).limit(8)
-    ).scalars().all()
-    blurb = " ".join(a.summary or a.content[:400] for a in arts)[:3500]
+    try:
+        arts = db.execute(
+            select(Article)
+            .join(ArticleEntity, ArticleEntity.article_id == Article.id)
+            .where(ArticleEntity.entity_id == entity.id)
+            .order_by(Article.created_at.desc())
+            .limit(8)
+        ).scalars().all()
+    except Exception as e:
+        log.exception("summarise_entity query failed: %s", e)
+        return ""
+    blurb = " ".join((a.summary or (a.content or "")[:400]) for a in arts)[:3500]
+    if not blurb:
+        return ""
     openai_ans = _openai_chat([
         {"role": "system", "content": "You produce concise neutral summaries of an entity from news context."},
         {"role": "user", "content": f"Entity: {entity.name} ({entity.type}).\nRecent context:\n{blurb}\n\nWrite 2-3 sentences."}
