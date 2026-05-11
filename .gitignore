@@ -1,0 +1,35 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# SQLite / data
+*.db
+*.db-journal
+backend/newsgraph.db
+backend/data/
+
+# spaCy cache, models
+.cache/
+.huggingface/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
