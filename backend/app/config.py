@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-secret-change-me"
     jwt_alg: str = "HS256"
     jwt_expiry_minutes: int = 720
-    cors_origins: str = "http://localhost:5000"
+    cors_origins: str = "http://localhost:5000,http://127.0.0.1:5000"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     scheduler_enabled: bool = True
