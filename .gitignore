@@ -33,3 +33,6 @@ backend/data/
 *.swp
 .DS_Store
 Thumbs.db
+
+backend/pip_install.log
+backend/data/
