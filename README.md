@@ -56,7 +56,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:5000.
 
 ### Option B — Docker
 
@@ -74,7 +74,7 @@ cd backend
 python -m app.seeds
 ```
 
-Then visit http://localhost:3000/graph.
+Then visit http://localhost:5000/graph.
 
 ## Default users
 

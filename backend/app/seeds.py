@@ -56,7 +56,7 @@ def seed() -> None:
         print("Running NLP processing…")
         n_processed = processing_service.process_unprocessed(db, limit=200)
         print(f"Processed {n_processed} articles.")
-        print("Done. Open http://localhost:3000")
+        print("Done. Open http://localhost:5000")
 
 
 if __name__ == "__main__":

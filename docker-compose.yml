@@ -3,7 +3,7 @@ services:
     build: ./backend
     environment:
       - DATABASE_URL=sqlite:////app/data/newsgraph.db
-      - CORS_ORIGINS=http://localhost:3000
+      - CORS_ORIGINS=http://localhost:5000
       - JWT_SECRET=${JWT_SECRET:-please-change-me-in-prod}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - SCHEDULER_ENABLED=true
@@ -17,7 +17,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_BASE=http://localhost:8000
     ports:
-      - "3000:3000"
+      - "5000:5000"
     depends_on:
       - backend
 
