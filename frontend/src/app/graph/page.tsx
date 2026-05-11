@@ -1,60 +1,89 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import GraphCanvas from "@/components/GraphCanvas";
+import EntityAutocomplete from "@/components/EntityAutocomplete";
 import { api } from "@/lib/api";
 import type { Entity } from "@/types";
+import { IGraph, IInfo, ITrend } from "@/components/Icons";
 
 function GraphPageInner() {
   const params = useSearchParams();
+  const router = useRouter();
   const initialId = params.get("entity") || "";
-  const [seedId, setSeedId] = useState(initialId);
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<Entity[]>([]);
-  const [centrality, setCentrality] = useState<Entity[]>([]);
+  const [seed, setSeed] = useState<Entity | null>(null);
+  const [trending, setTrending] = useState<Entity[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.centrality(15).then(rows => setCentrality(rows.map(r => ({
-      id: r.entity_id, name: r.name, type: r.type, mentions: r.degree,
-    }) as Entity))).catch(() => {});
+    setLoading(true);
+    api.centrality(18).then(rows => {
+      setTrending(rows.map(r => ({ id: r.entity_id, name: r.name, type: r.type, mentions: r.degree }) as Entity));
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    if (!q) { setResults([]); return; }
-    const h = setTimeout(() => { api.entities(q, "", 10).then(setResults).catch(() => {}); }, 200);
-    return () => clearTimeout(h);
-  }, [q]);
+    if (!initialId || (seed && seed.id === initialId)) return;
+    api.entity(initialId).then(setSeed).catch(() => {});
+  }, [initialId, seed]);
 
-  useEffect(() => {
-    if (!seedId && centrality.length > 0) setSeedId(centrality[0].id);
-  }, [centrality, seedId]);
+  function pick(e: Entity) {
+    setSeed(e);
+    router.replace(`/graph?entity=${e.id}`);
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 items-center">
-        <input className="input max-w-xs" placeholder="Search entity…" value={q} onChange={e => setQ(e.target.value)} />
-        {results.map(r => (
-          <button key={r.id} className="badge bg-slate-100 hover:bg-slate-200" onClick={() => { setSeedId(r.id); setQ(""); setResults([]); }}>
-            {r.name} <span className="ml-1 text-muted">{r.type}</span>
-          </button>
-        ))}
+    <div className="space-y-5 animate-fade-in">
+      <div className="flex items-baseline gap-2">
+        <IGraph size={20} className="text-accent"/>
+        <h1 className="text-2xl font-bold">Entity graph</h1>
+      </div>
+      <p className="text-muted text-sm -mt-3">
+        Search for a person, company or country — then explore who they're connected to, and how.
+      </p>
+
+      <div className="card p-4 flex flex-col md:flex-row md:items-center gap-3">
+        <div className="flex-1">
+          <EntityAutocomplete autoFocus onSelect={pick}/>
+        </div>
+        {seed && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="badge-blue">Seed</span>
+            <span className="font-medium">{seed.name}</span>
+            <span className="badge-slate">{seed.type}</span>
+            <button className="btn-ghost" onClick={() => { setSeed(null); router.replace("/graph"); }}>Clear</button>
+          </div>
+        )}
       </div>
 
-      {!seedId ? (
+      {!seed ? (
         <div className="card p-6">
-          <h2 className="font-semibold mb-2">Pick a seed entity</h2>
+          <div className="flex items-center gap-2 mb-3">
+            <ITrend size={16} className="text-accent"/>
+            <h2 className="font-semibold">Or pick a trending entity to start</h2>
+          </div>
+          {loading && (
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton" style={{ width: 110 + (i * 13) % 60, height: 32 }}/>)}
+            </div>
+          )}
+          {!loading && trending.length === 0 && (
+            <div className="text-sm text-muted flex items-center gap-2 mt-2">
+              <IInfo size={16}/> No entities yet — trigger an ingest from the <a className="link" href="/admin">Admin</a> page.
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
-            {centrality.map(c => (
-              <button key={c.id} className="badge bg-slate-100 hover:bg-slate-200" onClick={() => setSeedId(c.id)}>
-                {c.name} <span className="ml-1 text-muted">{c.type} · {c.mentions}</span>
+            {trending.map(c => (
+              <button key={c.id} className="px-3 py-1.5 rounded-full border border-slate-200 bg-white text-sm hover:border-accent hover:shadow-sm transition" onClick={() => pick(c)}>
+                <span className="font-medium">{c.name}</span>
+                <span className="ml-2 text-xs text-muted">{c.type} · {c.mentions}</span>
               </button>
             ))}
-            {centrality.length === 0 && <p className="text-sm text-muted">No entities yet. Trigger an ingest from the Admin page.</p>}
           </div>
         </div>
       ) : (
-        <GraphCanvas entityId={seedId} />
+        <GraphCanvas entityId={seed.id} entityName={seed.name}/>
       )}
     </div>
   );
@@ -63,7 +92,7 @@ function GraphPageInner() {
 export default function GraphPage() {
   return (
     <Suspense fallback={<p className="text-muted">Loading…</p>}>
-      <GraphPageInner />
+      <GraphPageInner/>
     </Suspense>
   );
 }

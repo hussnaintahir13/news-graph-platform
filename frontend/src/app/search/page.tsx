@@ -4,53 +4,95 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/types";
+import { IArticle, IInfo, ISearch, ITag } from "@/components/Icons";
+
+const MODES: { id: "keyword" | "semantic" | "entity"; label: string; help: string }[] = [
+  { id: "keyword",  label: "Keyword",  help: "Exact match on article title/body." },
+  { id: "semantic", label: "Semantic", help: "Cosine match on sentence-transformer embeddings — meaning, not words." },
+  { id: "entity",   label: "Entity",   help: "Search by entity name (people, companies, countries)." },
+];
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
   const [mode, setMode] = useState<"keyword" | "semantic" | "entity">("keyword");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [busy, setBusy] = useState(false);
+  const [touched, setTouched] = useState(false);
 
   async function run() {
     if (!q.trim()) return;
-    setBusy(true);
+    setBusy(true); setTouched(true);
     try { setHits(await api.search(q, mode)); }
     finally { setBusy(false); }
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Search</h1>
-      <div className="flex flex-wrap gap-2">
-        <input
-          className="input max-w-xl"
-          placeholder="Search articles or entities…"
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && run()}
-        />
-        <select className="input max-w-[160px]" value={mode} onChange={e => setMode(e.target.value as typeof mode)}>
-          <option value="keyword">Keyword</option>
-          <option value="semantic">Semantic</option>
-          <option value="entity">Entity</option>
-        </select>
-        <button className="btn-primary" onClick={run} disabled={busy}>{busy ? "Searching…" : "Search"}</button>
+    <div className="space-y-5 animate-fade-in">
+      <div className="flex items-baseline gap-2">
+        <ISearch size={20} className="text-accent"/>
+        <h1 className="text-2xl font-bold">Search</h1>
       </div>
+
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[260px]">
+            <ISearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"/>
+            <input
+              autoFocus
+              className="input pl-9"
+              placeholder="Search articles or entities…"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && run()}
+            />
+          </div>
+          <button className="btn-primary" onClick={run} disabled={busy || !q.trim()}>
+            {busy ? "Searching…" : "Search"}
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          {MODES.map(m => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              className={"px-3 py-1.5 rounded-full text-sm border transition " +
+                (mode === m.id
+                  ? "bg-accent text-white border-accent"
+                  : "bg-white text-slate-700 border-slate-200 hover:border-accent")
+              }
+              title={m.help}
+            >
+              {m.label}
+            </button>
+          ))}
+          <span className="text-xs text-muted ml-1">{MODES.find(m => m.id === mode)?.help}</span>
+        </div>
+      </div>
+
+      {touched && !busy && hits.length === 0 && (
+        <div className="card p-6 text-center">
+          <IInfo size={22} className="text-muted mx-auto"/>
+          <p className="text-sm text-muted mt-2">No results. Try a different query or switch search mode.</p>
+        </div>
+      )}
 
       <ul className="space-y-2">
         {hits.map(h => (
-          <li key={`${h.kind}-${h.id}`} className="card p-4">
-            <Link href={h.kind === "article" ? `/articles/${h.id}` : `/entities/${h.id}`} className="block">
-              <div className="flex items-center gap-2">
-                <span className="badge bg-slate-100 text-slate-700">{h.kind}</span>
-                <span className="text-xs text-muted">score {h.score.toFixed(2)}</span>
+          <li key={`${h.kind}-${h.id}`} className="animate-slide-up">
+            <Link
+              href={h.kind === "article" ? `/articles/${h.id}` : `/entities/${h.id}`}
+              className="card card-hover p-4 block group"
+            >
+              <div className="flex items-center gap-2 text-xs text-muted">
+                {h.kind === "article" ? <IArticle size={14}/> : <ITag size={14}/>}
+                <span className={h.kind === "article" ? "badge-slate" : "badge-blue"}>{h.kind}</span>
+                <span>· score {h.score.toFixed(2)}</span>
               </div>
-              <div className="font-medium mt-1">{h.title}</div>
-              {h.snippet && <p className="text-sm text-muted mt-1">{h.snippet}</p>}
+              <div className="font-semibold text-ink mt-1 group-hover:text-accent transition">{h.title}</div>
+              {h.snippet && <p className="text-sm text-muted mt-1 leading-relaxed">{h.snippet}</p>}
             </Link>
           </li>
         ))}
-        {hits.length === 0 && !busy && <p className="text-muted text-sm">No results yet.</p>}
       </ul>
     </div>
   );
