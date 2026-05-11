@@ -38,12 +38,24 @@ export default function InsightsPanel({ entityId, view }: Props) {
     return `${view.depth}|${view.entityTypeFilter}|${view.relTypeFilter}|${view.visibleEdges.length}|${view.visibleNodes.length}`;
   }, [view]);
 
-  // Whenever the filters change, clear any AI summary so the UI never shows stale text.
+  // Auto-fire the scoped insight whenever the filter signature changes (debounced).
+  // - Clears stale text immediately so the user never sees a summary that doesn't match.
+  // - Re-runs after a short debounce so rapid slicer changes don't hammer the API.
   useEffect(() => {
-    if (currentSig && aiSignatureRef.current && aiSignatureRef.current !== currentSig) {
+    if (!ent || !view) return;
+    // Clear previous output immediately so we never look at stale text.
+    if (aiSignatureRef.current && aiSignatureRef.current !== currentSig) {
       setAi(null);
+      setAiError(null);
     }
-  }, [currentSig]);
+    if (view.visibleEdges.length === 0) {
+      // Nothing in scope — don't bother calling the API.
+      return;
+    }
+    const timer = setTimeout(() => { generateAi(); }, 600);
+    return () => clearTimeout(timer);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [currentSig, ent?.id]);
 
   const viewSummary = useMemo(() => {
     if (!view || !ent) return null;
@@ -156,7 +168,7 @@ export default function InsightsPanel({ entityId, view }: Props) {
             )}
           </div>
           <button className="btn-ghost text-xs" onClick={generateAi} disabled={aiBusy || !view || inScopeCount === 0}>
-            <ISpark size={12}/> {aiBusy ? "Thinking…" : ai ? "Regenerate" : "Generate"}
+            <ISpark size={12}/> {aiBusy ? "Updating…" : "Refresh"}
           </button>
         </div>
 
@@ -164,9 +176,12 @@ export default function InsightsPanel({ entityId, view }: Props) {
           <div className="text-sm text-bad flex items-center gap-2"><IInfo size={14}/> {aiError}</div>
         )}
 
+        {aiBusy && !ai && <div className="skeleton h-16"/>}
+
         {ai ? (
           <div className="space-y-3">
-            <p className="text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">{ai.answer}</p>
+            <p className="text-sm leading-relaxed text-slate-800 whitespace-pre-wrap"
+               dangerouslySetInnerHTML={{ __html: ai.answer.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") }}/>
             {ai.sources.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-muted">Sources in scope:</span>
@@ -178,14 +193,14 @@ export default function InsightsPanel({ entityId, view }: Props) {
               </div>
             )}
           </div>
-        ) : (
+        ) : (!aiBusy && (
           <p className="text-sm text-muted">
             {inScopeCount === 0
               ? "No relationships in the current view — nothing to summarise. Adjust the slicers above."
-              : <>Click <b>Generate</b> to get a 2-3 sentence summary drawn only from the articles supporting the <b>{inScopeCount}</b> visible relationship{inScopeCount === 1 ? "" : "s"}.</>
+              : <>Generating a summary scoped to the <b>{inScopeCount}</b> visible relationship{inScopeCount === 1 ? "" : "s"}…</>
             }
           </p>
-        )}
+        ))}
       </div>
     </div>
   );

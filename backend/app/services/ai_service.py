@@ -223,13 +223,58 @@ def scoped_summary(
     if openai_ans:
         answer = prefix_note + openai_ans
     else:
-        answer = prefix_note + _extractive_summary(context, max_sentences=3)
+        # Deterministic structured fallback. Reads like a summary, not a quoted article body.
+        answer = prefix_note + _scoped_deterministic(
+            subject_name=subject.name,
+            filter_phrase=filter_phrase,
+            articles=articles,
+            others=visible_entities,
+        )
 
     return AskResponse(
         answer=answer,
         sources=[ArticleOut.model_validate(a) for a in articles],
         entities=[EntityOut.model_validate(e) for e in visible_entities],
     )
+
+
+def _scoped_deterministic(subject_name: str, filter_phrase: str, articles: list[Article], others: list[Entity]) -> str:
+    """Compose a readable scoped summary without an LLM.
+
+    Format:
+        In the current view{filter_phrase}, {subject} is connected to {N} entities
+        (X, Y, Z and N more). The {M} articles supporting this view discuss:
+          • <lede sentence of article 1>
+          • <lede sentence of article 2>
+    """
+    parts: list[str] = []
+    intro = f"In the current view{filter_phrase}, **{subject_name}**"
+    n = len(others)
+    if n == 0:
+        parts.append(intro + " has no other entities in scope.")
+    else:
+        names = [e.name for e in others[:5]]
+        if n == 1:
+            parts.append(f"{intro} is connected to **{names[0]}**.")
+        elif n <= 5:
+            parts.append(f"{intro} is connected to " + ", ".join(f"**{x}**" for x in names[:-1]) + f" and **{names[-1]}**.")
+        else:
+            head = ", ".join(f"**{x}**" for x in names)
+            parts.append(f"{intro} is connected to **{n}** entities, including {head}.")
+
+    if articles:
+        plural = "s" if len(articles) > 1 else ""
+        parts.append(f" The {len(articles)} article{plural} supporting this view discuss:")
+        for a in articles[:3]:
+            sentences = _split_sentences(a.content or "")
+            if not sentences:
+                continue
+            lede = sentences[0].strip()
+            if len(lede) > 180:
+                lede = lede[:180].rsplit(" ", 1)[0] + "…"
+            parts.append(f"\n• {lede}")
+
+    return "".join(parts)
 
 
 def explain_relationship(db: Session, source_id: str, target_id: str) -> str:
