@@ -95,6 +95,16 @@ export const api = {
   ask: (question: string) =>
     request<AskResponse>("/api/ask", { method: "POST", body: JSON.stringify({ question }) }),
 
+  scopedInsight: (payload: {
+    subject_id: string;
+    relationship_ids: string[];
+    entity_ids: string[];
+    rel_type_filter?: string;
+    entity_type_filter?: string;
+  }) => request<AskResponse>("/api/insights/scoped", {
+    method: "POST", body: JSON.stringify(payload),
+  }),
+
   sources: () => request<Source[]>("/api/ingest/sources"),
   addSource: (s: { name: string; kind: "rss" | "sitemap" | "url"; url: string }) =>
     request<Source>("/api/ingest/sources", { method: "POST", body: JSON.stringify(s) }),

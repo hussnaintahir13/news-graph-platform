@@ -127,6 +127,111 @@ def answer_question(db: Session, question: str) -> AskResponse:
     )
 
 
+def scoped_summary(
+    db: Session,
+    subject_id: str,
+    relationship_ids: list[str],
+    entity_ids: list[str],
+    rel_type_filter: str | None,
+    entity_type_filter: str | None,
+) -> AskResponse:
+    """Summary scoped to the currently-visible subgraph on /explore.
+
+    Articles are drawn ONLY from the edges that survived the filters. If no
+    edges are in scope (e.g. user has filtered everything out) the answer
+    explicitly says so, instead of falling back to a global summary.
+    """
+    subject = db.get(Entity, subject_id)
+    if not subject:
+        return AskResponse(answer="Subject entity not found.", sources=[], entities=[])
+
+    # 1) Collect article IDs from the visible edges.
+    article_ids: set[str] = set()
+    if relationship_ids:
+        rels = db.execute(
+            select(Relationship_).where(Relationship_.id.in_(relationship_ids))
+        ).scalars().all()
+        for r in rels:
+            if r.article_id:
+                article_ids.add(r.article_id)
+
+    # 2) Fallback to the subject's own articles only when NOTHING in the view
+    #    has an article reference — keeps the summary scoped while preventing
+    #    a totally empty result on a freshly-seeded entity.
+    using_fallback = False
+    if not article_ids:
+        using_fallback = True
+        rows = db.execute(
+            select(ArticleEntity.article_id)
+            .where(ArticleEntity.entity_id == subject_id)
+            .limit(8)
+        ).scalars().all()
+        article_ids = set(rows)
+
+    if not article_ids:
+        return AskResponse(
+            answer=(
+                f"No articles match the current filters for {subject.name}. "
+                "Relax the filters above or ingest more sources from the Admin page."
+            ),
+            sources=[], entities=[],
+        )
+
+    articles = db.execute(
+        select(Article).where(Article.id.in_(article_ids))
+        .order_by(Article.published_at.desc().nulls_last(), Article.created_at.desc())
+        .limit(8)
+    ).scalars().all()
+
+    visible_entities: list[Entity] = []
+    if entity_ids:
+        ent_ids = [i for i in entity_ids if i != subject_id]
+        if ent_ids:
+            visible_entities = db.execute(
+                select(Entity).where(Entity.id.in_(ent_ids)).order_by(Entity.mentions.desc()).limit(6)
+            ).scalars().all()
+
+    # 3) Describe the filter state in plain English for both prompt + UI.
+    filter_bits: list[str] = []
+    if rel_type_filter and rel_type_filter != "ALL":
+        filter_bits.append(f"only via {rel_type_filter.lower().replace('_', ' ')} relationships")
+    if entity_type_filter and entity_type_filter != "ALL":
+        filter_bits.append(f"limited to {entity_type_filter} entities")
+    filter_phrase = (" — " + " and ".join(filter_bits)) if filter_bits else ""
+
+    context_lines = [f"- {a.title}: {(a.summary or (a.content or '')[:300])}" for a in articles]
+    context = "\n".join(context_lines)
+    prefix_note = "(no edges in the filtered view carried article references, so we drew from the subject's article set instead) " if using_fallback else ""
+
+    openai_ans = _openai_chat([
+        {
+            "role": "system",
+            "content": (
+                "You are a careful news analyst. Summarise ONLY what the articles below say about the named entity. "
+                "Stay strictly within the provided context — do not introduce outside knowledge. Hedge where the evidence is thin."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Summarise what these news articles say about {subject.name}{filter_phrase}, in 2-3 sentences.\n\n"
+                f"Articles:\n{context}"
+            ),
+        },
+    ])
+
+    if openai_ans:
+        answer = prefix_note + openai_ans
+    else:
+        answer = prefix_note + _extractive_summary(context, max_sentences=3)
+
+    return AskResponse(
+        answer=answer,
+        sources=[ArticleOut.model_validate(a) for a in articles],
+        entities=[EntityOut.model_validate(e) for e in visible_entities],
+    )
+
+
 def explain_relationship(db: Session, source_id: str, target_id: str) -> str:
     rels: Iterable[Relationship_] = db.execute(
         select(Relationship_).where(

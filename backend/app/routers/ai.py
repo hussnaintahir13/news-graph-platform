@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from ..auth import require_roles
 from ..db import get_db
 from ..models import Entity
-from ..schemas import AskRequest, AskResponse, HypothesisRequest, HypothesisResponse
+from ..schemas import AskRequest, AskResponse, HypothesisRequest, HypothesisResponse, ScopedInsightRequest
 from ..services import ai_service
 
 router = APIRouter(prefix="/api", tags=["ai"])
@@ -19,6 +19,18 @@ def ask(payload: AskRequest, db: Session = Depends(get_db)):
 @router.get("/explain/{source_id}/{target_id}", dependencies=[Depends(require_roles())])
 def explain(source_id: str, target_id: str, db: Session = Depends(get_db)):
     return {"explanation": ai_service.explain_relationship(db, source_id, target_id)}
+
+
+@router.post("/insights/scoped", response_model=AskResponse, dependencies=[Depends(require_roles())])
+def scoped_insight(payload: ScopedInsightRequest, db: Session = Depends(get_db)):
+    return ai_service.scoped_summary(
+        db,
+        subject_id=payload.subject_id,
+        relationship_ids=payload.relationship_ids,
+        entity_ids=payload.entity_ids,
+        rel_type_filter=payload.rel_type_filter,
+        entity_type_filter=payload.entity_type_filter,
+    )
 
 
 @router.post("/hypothesis", response_model=HypothesisResponse, dependencies=[Depends(require_roles())])

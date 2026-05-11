@@ -195,6 +195,15 @@ class HypothesisResponse(BaseModel):
     ai_generated: bool = False
 
 
+# ---------- Scoped insight (filter-aware AI summary) ----------
+class ScopedInsightRequest(BaseModel):
+    subject_id: str
+    relationship_ids: list[str] = []        # edge IDs currently visible after filters
+    entity_ids: list[str] = []              # node IDs currently visible
+    rel_type_filter: Optional[str] = None   # "ALL" or a specific relation type
+    entity_type_filter: Optional[str] = None  # "ALL" or a specific entity type
+
+
 # ---------- Argument construction (chained-evidence reasoning) ----------
 class ArgumentRequest(BaseModel):
     subject_id: str
