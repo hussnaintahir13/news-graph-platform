@@ -78,7 +78,7 @@ export default function EntityPage() {
     <div className="space-y-7 animate-fade-in">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs text-muted">
-        <Link href="/graph" className="hover:text-accent transition">Graph</Link>
+        <Link href="/explore" className="hover:text-accent transition">Explore</Link>
         <span>/</span>
         <span className="text-ink">{ent.name}</span>
       </div>
@@ -102,7 +102,7 @@ export default function EntityPage() {
           {ent.description && <p className="text-sm text-slate-700 max-w-3xl mt-3 leading-relaxed">{ent.description}</p>}
 
           <div className="flex flex-wrap gap-2 mt-5">
-            <Link className="btn-primary" href={`/graph?entity=${ent.id}`}>
+            <Link className="btn-primary" href={`/explore?mode=single&entity=${ent.id}`}>
               <IGraph size={14}/> Visualise the network
             </Link>
             {canWatch && (
@@ -119,13 +119,13 @@ export default function EntityPage() {
                 <IBell size={14}/> {watched ? "Watching" : adding ? "Adding…" : "Watch for new mentions"}
               </button>
             )}
-            <Link className="btn-secondary" href={`/connect?entities=${ent.id}`}>
+            <Link className="btn-secondary" href={`/explore?mode=multi&entities=${ent.id}`}>
               <IConnect size={14}/> Connect with another
             </Link>
-            <Link className="btn-ghost" href={`/search?q=${encodeURIComponent(ent.name)}`}>
+            <Link className="btn-ghost" href={`/library?mode=keyword&q=${encodeURIComponent(ent.name)}`}>
               <ISearch size={14}/> Search related articles
             </Link>
-            <Link className="btn-ghost" href={`/ask?q=${encodeURIComponent("Tell me about " + ent.name)}`}>
+            <Link className="btn-ghost" href={`/insights?q=${encodeURIComponent("Tell me about " + ent.name)}`}>
               <ISpark size={14}/> Ask AI about this
             </Link>
           </div>

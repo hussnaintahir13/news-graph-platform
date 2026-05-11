@@ -40,7 +40,7 @@ export default function WatchlistsPage() {
         {!loading && watches.length === 0 && (
           <div className="card p-6 text-center">
             <IInfo size={22} className="text-muted mx-auto"/>
-            <p className="text-sm text-muted mt-2">No entities watched yet. Find one on the <Link className="link" href="/graph">Graph</Link>.</p>
+            <p className="text-sm text-muted mt-2">No entities watched yet. Find one on <Link className="link" href="/explore">Explore</Link>.</p>
           </div>
         )}
         <ul className="grid md:grid-cols-2 gap-3">

@@ -45,9 +45,9 @@ export default function Home() {
             Explore connections between people, companies and countries — extracted from your live news feeds.
           </p>
           <div className="flex flex-wrap gap-2 mt-4">
-            <Link href="/graph" className="btn-primary"><IGraph size={14}/> Open graph</Link>
-            <Link href="/search" className="btn-secondary"><ISearch size={14}/> Search</Link>
-            <Link href="/ask" className="btn-secondary"><ISpark size={14}/> Ask AI</Link>
+            <Link href="/explore" className="btn-primary"><IGraph size={14}/> Explore the graph</Link>
+            <Link href="/library" className="btn-secondary"><ISearch size={14}/> Browse library</Link>
+            <Link href="/insights" className="btn-secondary"><ISpark size={14}/> Ask AI</Link>
             <Link href="/how-to" className="btn-ghost"><IBook size={14}/> How it works</Link>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function Home() {
             <ITrend size={18} className="text-accent"/>
             <h2 className="font-semibold text-ink">Trending entities</h2>
           </div>
-          <Link href="/graph" className="text-sm link">Open graph →</Link>
+          <Link href="/explore" className="text-sm link">Explore graph →</Link>
         </div>
         {loading && <SkeletonRow count={8}/>}
         {!loading && entities.length === 0 && <EmptyState message="No entities yet. Trigger an ingest from the Admin page." cta="/admin"/>}
@@ -82,7 +82,7 @@ export default function Home() {
             <IArticle size={18} className="text-accent"/>
             <h2 className="font-semibold text-ink">Recent articles</h2>
           </div>
-          <Link href="/articles" className="text-sm link">All articles →</Link>
+          <Link href="/library" className="text-sm link">All articles →</Link>
         </div>
         {loading && <SkeletonGrid count={4}/>}
         {!loading && articles.length === 0 && <EmptyState message="No articles yet. Trigger an ingest from the Admin page." cta="/admin"/>}

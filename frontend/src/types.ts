@@ -163,3 +163,10 @@ export interface HypothesisResponse {
 }
 
 export type EntityType = "Person" | "Company" | "Organization" | "Country" | "Event" | "Product" | "Technology" | "Narrative" | "Concept";
+
+export interface Interest {
+  id: string;
+  keyword: string;
+  priority: number;
+  created_at: string;
+}

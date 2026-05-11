@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from ..config import settings
 from ..db import SessionLocal
-from ..services import ingest_service, processing_service
+from ..services import ingest_service, interests_service, processing_service
 
 log = logging.getLogger(__name__)
 _scheduler: BackgroundScheduler | None = None
@@ -16,9 +16,13 @@ _scheduler: BackgroundScheduler | None = None
 def _tick() -> None:
     with SessionLocal() as db:
         try:
-            n_ingested = ingest_service.ingest_all(db)
-            n_processed = processing_service.process_unprocessed(db, limit=100)
-            log.info("scheduler tick: ingested=%s processed=%s", n_ingested, n_processed)
+            n_interest = interests_service.ingest_interests(db, max_per_keyword=10)
+            n_standard = ingest_service.ingest_all(db)
+            n_processed = processing_service.process_unprocessed(db, limit=200)
+            log.info(
+                "scheduler tick: interest_articles=%s standard_articles=%s processed=%s",
+                n_interest, n_standard, n_processed,
+            )
         except Exception as e:
             log.exception("scheduler tick failed: %s", e)
 

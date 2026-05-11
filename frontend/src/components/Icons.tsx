@@ -41,3 +41,8 @@ export const ITag = (p: IconProps) => <I {...p}><path d="M20.6 13.4 13.4 20.6a2 
 export const IX = (p: IconProps) => <I {...p}><path d="M18 6 6 18M6 6l12 12"/></I>;
 export const IConnect = (p: IconProps) => <I {...p}><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 12h2M16 7 8 11M16 17l-8-4"/></I>;
 export const IBeaker = (p: IconProps) => <I {...p}><path d="M9 3h6v6l5 9a2 2 0 0 1-1.8 3H5.8A2 2 0 0 1 4 18l5-9V3z"/><path d="M8 14h8"/></I>;
+export const IMenu = (p: IconProps) => <I {...p}><path d="M4 6h16M4 12h16M4 18h16"/></I>;
+export const IHeart = (p: IconProps) => <I {...p}><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.7 1-1a5.5 5.5 0 0 0 0-7.7z"/></I>;
+export const IFilter = (p: IconProps) => <I {...p}><path d="M3 4h18l-7 9v6l-4-2v-4z"/></I>;
+export const ILibrary = (p: IconProps) => <I {...p}><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M9 7h6M9 11h6M9 15h6"/></I>;
+export const IExplore = (p: IconProps) => <I {...p}><circle cx="12" cy="12" r="9"/><path d="m9 15 2-6 6-2-2 6z"/></I>;

@@ -115,3 +115,16 @@ class Alert(Base):
     reason: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     seen: Mapped[bool] = mapped_column(default=False)
+
+
+class Interest(Base):
+    """Keywords a user wants crawled with priority. Fed into Google News RSS each tick."""
+    __tablename__ = "interests"
+    __table_args__ = (UniqueConstraint("user_id", "keyword_norm", name="uq_interest_user_keyword"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    keyword: Mapped[str] = mapped_column(String(255))
+    keyword_norm: Mapped[str] = mapped_column(String(255), index=True)
+    priority: Mapped[int] = mapped_column(Integer, default=5)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

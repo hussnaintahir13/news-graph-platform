@@ -236,6 +236,21 @@ class WatchlistOut(BaseModel):
         from_attributes = True
 
 
+class InterestCreate(BaseModel):
+    keyword: str = Field(min_length=2, max_length=255)
+    priority: int = 5
+
+
+class InterestOut(BaseModel):
+    id: str
+    keyword: str
+    priority: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class AlertOut(BaseModel):
     id: str
     entity_id: str

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     scheduler_enabled: bool = True
-    scheduler_interval_minutes: int = 30
+    scheduler_interval_minutes: int = 180
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     spacy_model: str = "en_core_web_sm"
     rate_limit: str = "60/minute"

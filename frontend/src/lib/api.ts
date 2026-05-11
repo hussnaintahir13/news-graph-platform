@@ -1,6 +1,6 @@
 import type {
   Alert, Article, ArticleDetail, AskResponse, AuthState, Entity, EntityDetail, EntityType,
-  GraphResponse, HypothesisResponse, PathInfo, SearchHit, Source, Watchlist,
+  GraphResponse, HypothesisResponse, Interest, PathInfo, SearchHit, Source, Watchlist,
 } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
@@ -76,6 +76,12 @@ export const api = {
     request<HypothesisResponse>("/api/hypothesis", { method: "POST", body: JSON.stringify({ entity_ids, max_hops, max_paths_per_pair }) }),
   createEntity: (name: string, type: EntityType = "Concept", description?: string) =>
     request<Entity>("/api/entities", { method: "POST", body: JSON.stringify({ name, type, description }) }),
+
+  interests: () => request<Interest[]>("/api/interests"),
+  addInterest: (keyword: string, priority = 5) =>
+    request<Interest>("/api/interests", { method: "POST", body: JSON.stringify({ keyword, priority }) }),
+  removeInterest: (id: string) =>
+    request<{ ok: true }>(`/api/interests/${id}`, { method: "DELETE" }),
 
   search: (q: string, mode: "keyword" | "semantic" | "entity" = "keyword") =>
     request<SearchHit[]>("/api/search", { method: "POST", body: JSON.stringify({ q, mode, limit: 25 }) }),

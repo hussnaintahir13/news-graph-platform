@@ -1,18 +1,17 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
-  title: "AI News Relationship Map",
-  description: "Interactive graph of people, companies, countries, and narratives extracted from news.",
+  title: "News Graph — interactive map of news entities and relationships",
+  description: "Continuously crawls news, extracts people / companies / countries / events, and lets you explore them as a live graph. © Syed Hussnain Tahir Sherazi.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <Navbar />
-        <main className="max-w-7xl mx-auto p-4 md:p-6">{children}</main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

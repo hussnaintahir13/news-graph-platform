@@ -60,13 +60,13 @@ export default function HowToPage() {
             Open <Link className="link" href="/admin">Admin</Link>, paste an RSS URL like <code className="kbd">https://feeds.bbci.co.uk/news/world/rss.xml</code>, click <b>Add</b>, then <b>Run ingest now</b>.
           </Step>
           <Step n={2} icon={<ISearch size={18}/>} title="Find an entity">
-            Go to <Link className="link" href="/graph">Graph</Link> or <Link className="link" href="/search">Search</Link>, start typing a name. Suggestions appear as you type — click one to commit.
+            Go to <Link className="link" href="/explore">Explore</Link> or <Link className="link" href="/library">Library</Link>, start typing a name. Suggestions appear as you type — click one to commit.
           </Step>
           <Step n={3} icon={<IGraph size={18}/>} title="Explore the graph">
             Use the depth dropdown to expand to 2 hops. Click any node to drill into that entity's page; filter edges by relationship type.
           </Step>
           <Step n={4} icon={<ISpark size={18}/>} title="Ask the AI">
-            Open <Link className="link" href="/ask">Ask AI</Link> and ask questions like <i>“How is Nvidia connected to OpenAI?”</i> Answers cite source articles.
+            Open <Link className="link" href="/insights">Insights</Link> and ask questions like <i>“How is Nvidia connected to OpenAI?”</i> Answers cite source articles.
           </Step>
           <Step n={5} icon={<IBell size={18}/>} title="Watch entities">
             On any entity page click <b>Watch</b>. The next ingestion pass that mentions it creates an alert in <Link className="link" href="/watchlists">Watchlists</Link>.
