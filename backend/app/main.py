@@ -13,7 +13,7 @@ from slowapi.util import get_remote_address
 from .config import settings
 from .db import init_db
 from .jobs import scheduler
-from .routers import ai, articles, auth_router, entities, graph, ingest, interests, search, watchlists
+from .routers import ai, argument, articles, auth_router, entities, graph, ingest, interests, search, watchlists
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("newsgraph")
@@ -65,6 +65,7 @@ app.include_router(ai.router)
 app.include_router(ingest.router)
 app.include_router(watchlists.router)
 app.include_router(interests.router)
+app.include_router(argument.router)
 
 
 @app.exception_handler(Exception)

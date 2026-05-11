@@ -195,6 +195,41 @@ class HypothesisResponse(BaseModel):
     ai_generated: bool = False
 
 
+# ---------- Argument construction (chained-evidence reasoning) ----------
+class ArgumentRequest(BaseModel):
+    subject_id: str
+    outcome_id: str
+    theme_id: Optional[str] = None
+    max_hops: int = 4
+    min_confidence: float = 0.5
+
+
+class ArgumentPremise(BaseModel):
+    n: int
+    source_name: str
+    target_name: str
+    relation_type: str
+    relation_verb: str
+    confidence: float
+    article_id: Optional[str] = None
+    article_title: Optional[str] = None
+    article_quote: Optional[str] = None
+
+
+class ArgumentResponse(BaseModel):
+    can_construct: bool
+    decline_reason: Optional[str] = None
+    subject_name: Optional[str] = None
+    outcome_name: Optional[str] = None
+    theme_name: Optional[str] = None
+    chain_names: list[str] = []
+    premises: list[ArgumentPremise] = []
+    conclusion: str = ""
+    conclusion_template: str = ""
+    confidence_band: Literal["very-low", "low", "moderate", "high"] = "very-low"
+    supporting_articles: list[ArticleOut] = []
+
+
 # ---------- Search ----------
 class SearchRequest(BaseModel):
     q: str

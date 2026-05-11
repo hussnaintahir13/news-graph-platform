@@ -170,3 +170,29 @@ export interface Interest {
   priority: number;
   created_at: string;
 }
+
+export interface ArgumentPremise {
+  n: number;
+  source_name: string;
+  target_name: string;
+  relation_type: string;
+  relation_verb: string;
+  confidence: number;
+  article_id?: string;
+  article_title?: string;
+  article_quote?: string;
+}
+
+export interface ArgumentResponse {
+  can_construct: boolean;
+  decline_reason?: string;
+  subject_name?: string;
+  outcome_name?: string;
+  theme_name?: string;
+  chain_names: string[];
+  premises: ArgumentPremise[];
+  conclusion: string;
+  conclusion_template: string;
+  confidence_band: "very-low" | "low" | "moderate" | "high";
+  supporting_articles: Article[];
+}

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAuth } from "@/lib/api";
 import {
-  IArticle, IBell, IBook, IExplore, IGraph, IHeart, IHome, ILibrary, ISettings, ISpark, IX,
+  IArticle, IBell, IBook, IExplore, IGraph, IHeart, IHome, ILibrary, IScale, ISettings, ISpark, IX,
 } from "./Icons";
 
 // Everything navigable lives here. The drawer presents PRIMARY + SECONDARY together so it's
@@ -21,6 +21,7 @@ const PRIMARY: Item[] = [
 
 const SECONDARY: Item[] = [
   { href: "/interests", label: "My interests", Icon: IHeart },
+  { href: "/argument", label: "Build argument (beta)", Icon: IScale, roles: ["admin", "analyst"] },
   { href: "/watchlists", label: "Watchlists & alerts", Icon: IBell, roles: ["admin", "analyst"] },
   { href: "/admin", label: "Admin — sources", Icon: ISettings, roles: ["admin"] },
   { href: "/how-to", label: "How it works", Icon: IBook },

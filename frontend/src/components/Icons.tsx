@@ -46,3 +46,6 @@ export const IHeart = (p: IconProps) => <I {...p}><path d="M20.8 4.6a5.5 5.5 0 0
 export const IFilter = (p: IconProps) => <I {...p}><path d="M3 4h18l-7 9v6l-4-2v-4z"/></I>;
 export const ILibrary = (p: IconProps) => <I {...p}><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14"/><path d="M9 7h6M9 11h6M9 15h6"/></I>;
 export const IExplore = (p: IconProps) => <I {...p}><circle cx="12" cy="12" r="9"/><path d="m9 15 2-6 6-2-2 6z"/></I>;
+export const IScale = (p: IconProps) => <I {...p}><path d="M12 3v18M5 21h14"/><path d="M6 12 3 7h6L6 12zM18 12l-3-5h6l-3 5z"/></I>;
+export const IQuote = (p: IconProps) => <I {...p}><path d="M9 7H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v2a2 2 0 0 1-2 2"/><path d="M19 7h-4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v2a2 2 0 0 1-2 2"/></I>;
+export const IShield = (p: IconProps) => <I {...p}><path d="M12 22s8-4 8-10V4l-8-2-8 2v8c0 6 8 10 8 10z"/></I>;

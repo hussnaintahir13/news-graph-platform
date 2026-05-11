@@ -1,5 +1,5 @@
 import type {
-  Alert, Article, ArticleDetail, AskResponse, AuthState, Entity, EntityDetail, EntityType,
+  Alert, Article, ArticleDetail, ArgumentResponse, AskResponse, AuthState, Entity, EntityDetail, EntityType,
   GraphResponse, HypothesisResponse, Interest, PathInfo, SearchHit, Source, Watchlist,
 } from "@/types";
 
@@ -82,6 +82,12 @@ export const api = {
     request<Interest>("/api/interests", { method: "POST", body: JSON.stringify({ keyword, priority }) }),
   removeInterest: (id: string) =>
     request<{ ok: true }>(`/api/interests/${id}`, { method: "DELETE" }),
+
+  buildArgument: (subject_id: string, outcome_id: string, theme_id?: string, min_confidence = 0.5, max_hops = 4) =>
+    request<ArgumentResponse>("/api/argument", {
+      method: "POST",
+      body: JSON.stringify({ subject_id, outcome_id, theme_id, min_confidence, max_hops }),
+    }),
 
   search: (q: string, mode: "keyword" | "semantic" | "entity" = "keyword") =>
     request<SearchHit[]>("/api/search", { method: "POST", body: JSON.stringify({ q, mode, limit: 25 }) }),
