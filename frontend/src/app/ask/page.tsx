@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type { AskResponse } from "@/types";
 import { IArticle, IInfo, ISpark, ITag } from "@/components/Icons";
@@ -18,11 +19,16 @@ const TYPE_BADGE: Record<string, string> = {
   Country: "badge-amber", Event: "badge-red", Product: "badge-violet",
 };
 
-export default function AskPage() {
-  const [q, setQ] = useState("");
+function AskInner() {
+  const params = useSearchParams();
+  const initialQ = params.get("q") || "";
+  const [q, setQ] = useState(initialQ);
   const [resp, setResp] = useState<AskResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-ask if the page is opened with ?q=
+  useEffect(() => { if (initialQ) ask(initialQ); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   async function ask(question?: string) {
     const query = (question ?? q).trim();
@@ -110,5 +116,13 @@ export default function AskPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AskPage() {
+  return (
+    <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <AskInner/>
+    </Suspense>
   );
 }

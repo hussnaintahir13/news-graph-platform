@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type { SearchHit } from "@/types";
 import { IArticle, IInfo, ISearch, ITag } from "@/components/Icons";
@@ -12,17 +13,22 @@ const MODES: { id: "keyword" | "semantic" | "entity"; label: string; help: strin
   { id: "entity",   label: "Entity",   help: "Search by entity name (people, companies, countries)." },
 ];
 
-export default function SearchPage() {
-  const [q, setQ] = useState("");
+function SearchInner() {
+  const params = useSearchParams();
+  const initialQ = params.get("q") || "";
+  const [q, setQ] = useState(initialQ);
   const [mode, setMode] = useState<"keyword" | "semantic" | "entity">("keyword");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [busy, setBusy] = useState(false);
   const [touched, setTouched] = useState(false);
 
-  async function run() {
-    if (!q.trim()) return;
-    setBusy(true); setTouched(true);
-    try { setHits(await api.search(q, mode)); }
+  useEffect(() => { if (initialQ) run(initialQ); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  async function run(query?: string) {
+    const v = (query ?? q).trim();
+    if (!v) return;
+    setQ(v); setBusy(true); setTouched(true);
+    try { setHits(await api.search(v, mode)); }
     finally { setBusy(false); }
   }
 
@@ -46,7 +52,7 @@ export default function SearchPage() {
               onKeyDown={e => e.key === "Enter" && run()}
             />
           </div>
-          <button className="btn-primary" onClick={run} disabled={busy || !q.trim()}>
+          <button className="btn-primary" onClick={() => run()} disabled={busy || !q.trim()}>
             {busy ? "Searching…" : "Search"}
           </button>
         </div>
@@ -95,5 +101,13 @@ export default function SearchPage() {
         ))}
       </ul>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<p className="text-muted">Loading…</p>}>
+      <SearchInner/>
+    </Suspense>
   );
 }
