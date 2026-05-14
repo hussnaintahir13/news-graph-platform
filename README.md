@@ -143,6 +143,11 @@ Full schema is auto-published at http://localhost:8000/docs.
 - WebSocket live alerts
 - Misinformation detection
 
+## Author
+
+Syed Hussnain Tahir Sherazi — Associate Data Engineer, Leicester, UK.
+[www.syedhussnain.com](https://www.syedhussnain.com) · [LinkedIn](https://uk.linkedin.com/in/hussnainsherazi) · contact@syedhussnain.co.uk
+
 ## License
 
 MIT.

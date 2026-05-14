@@ -8,8 +8,12 @@ export default function Footer() {
           <br className="md:hidden"/>
           Unauthorised reproduction, distribution or commercial use is prohibited.
         </div>
-        <div className="text-[11px]">
-          For licensing or permission to use, please <a className="link" href="mailto:hussnaintahir13@users.noreply.github.com">contact the author</a>.
+        <div className="text-[11px] flex flex-wrap gap-x-2">
+          <a className="link" href="https://www.syedhussnain.com" target="_blank" rel="noreferrer">syedhussnain.com</a>
+          <span>·</span>
+          <a className="link" href="https://uk.linkedin.com/in/hussnainsherazi" target="_blank" rel="noreferrer">LinkedIn</a>
+          <span>·</span>
+          <a className="link" href="mailto:contact@syedhussnain.co.uk">contact@syedhussnain.co.uk</a>
         </div>
       </div>
     </footer>
