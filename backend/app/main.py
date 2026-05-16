@@ -16,7 +16,7 @@ from .jobs import scheduler
 from .routers import ai, argument, articles, auth_router, entities, graph, ingest, interests, search, watchlists
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-log = logging.getLogger("newsgraph")
+log = logging.getLogger("newrosense")
 
 limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit])
 
@@ -25,7 +25,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_lim
 async def lifespan(app: FastAPI):
     init_db()
     scheduler.start()
-    log.info("newsgraph backend started")
+    log.info("newrosense backend started")
     try:
         yield
     finally:
@@ -33,9 +33,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AI News Relationship Map",
-    version="0.1.0",
-    description="MVP backend: ingest news, extract entities/relationships, expose a graph API.",
+    title="NewroSense API",
+    version="0.2.0",
+    description=(
+        "NewroSense — perceptions, context and details about news. "
+        "Ingests news, extracts entities and typed relationships, exposes a graph API."
+    ),
     lifespan=lifespan,
 )
 app.state.limiter = limiter

@@ -151,12 +151,13 @@ function Landing() {
   return (
     <div className="space-y-12 animate-fade-in">
       <section className="text-center max-w-3xl mx-auto pt-6">
-        <div className="badge-blue inline-flex mb-3">AI News Relationship Map</div>
+        <div className="badge-blue inline-flex mb-3">NewroSense · News + Neuro</div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          Map the <span className="gradient-text">narratives</span> behind the headlines.
+          Build <span className="gradient-text">perceptions, context and details</span> about every story.
         </h1>
         <p className="text-muted mt-4 text-lg leading-relaxed">
-          Continuously ingest news, extract entities and relationships, and explore them as a living interactive graph.
+          NewroSense reads the news, extracts the people, companies, countries and events behind each story,
+          and surfaces the meaning under the headlines as a living, auditable graph.
         </p>
         <div className="flex justify-center gap-3 mt-6 flex-wrap">
           <Link href="/login" className="btn-primary"><ILogIn size={14}/> Sign in to start</Link>
@@ -185,7 +186,7 @@ function Landing() {
         <div className="relative grid md:grid-cols-[1fr_auto] gap-4 items-center">
           <div>
             <h2 className="text-xl font-bold">Built on familiar parts.</h2>
-            <p className="text-muted text-sm mt-1">FastAPI · spaCy · sentence-transformers · React Flow · Next.js. Swap in Neo4j or Postgres without touching the frontend.</p>
+            <p className="text-muted text-sm mt-1">FastAPI · spaCy · bge-small-en-v1.5 · React Flow · Next.js. Swap in Neo4j or Postgres without touching the frontend.</p>
           </div>
           <Link href="/how-to" className="btn-primary justify-self-start md:justify-self-end">
             <IBook size={14}/> Read the user guide

@@ -1,35 +1,43 @@
-# AI News Relationship Map
+# NewroSense
 
-An MVP implementation of the AI News Relationship Map platform: ingest news, extract entities and relationships, store them in a graph-shaped store, and visualise them interactively.
+> **News + Neuro = Newro.** A platform that builds **perceptions, context, and details** about every news story — not just headlines.
 
-## What's implemented (MVP)
+NewroSense ingests news, extracts the people, companies, countries, products and events behind each story, links them into a living entity-relationship graph, and surfaces the **meaning** under the headlines: who's connected to whom, how each story is evolving, and which signals are gaining momentum.
 
-| Spec section | Status | Notes |
+It is the successor to the earlier "News Graph Platform" / "AI News Relationship Map" MVP — same engine, sharper purpose.
+
+## What NewroSense gives you
+
+- **Perception** — every article is parsed into entities, sentiment, and typed relationships.
+- **Context** — every entity links to its source articles, its connections, its timeline, and its position in the broader graph.
+- **Details** — drill into any node, any edge, any sentence. Every signal is auditable.
+
+## What's implemented
+
+| Capability | Status | Notes |
 | --- | --- | --- |
-| 2.1 News ingestion | ✅ RSS + sitemap + ad-hoc URL | feedparser + httpx |
-| 2.2 Article processing | ✅ | trafilatura for boilerplate removal |
-| 2.3 NLP extraction | ✅ | spaCy NER + co-occurrence + sentence-transformers embeddings |
-| 2.4 Relationship engine | ✅ | confidence + dedup + edge weighting + temporal |
-| 2.5 Graph visualisation | ✅ | React Flow — pan/zoom/expand/filter |
-| 2.6 Search | ✅ | keyword (SQLite FTS) + semantic (cosine over embeddings) + entity |
-| 2.7 AI features | ✅ | OpenAI when `OPENAI_API_KEY` set; deterministic fallback otherwise |
-| 2.8 Live monitoring | ✅ (basic) | watchlists + recent-mentions alert; trend detection stubbed |
-| 3 Non-functional | ✅ baseline | JWT, RBAC roles, rate-limit middleware, retries on jobs |
+| News ingestion (RSS / sitemap / URL) | Done | `feedparser` + `httpx`; retries on failure |
+| Article processing | Done | `trafilatura` for boilerplate removal |
+| NLP extraction | Done | spaCy NER + sentence-level co-occurrence + sentence-transformer embeddings |
+| **Entity canonicalization** | **New (Chunk 1)** | Legal-suffix stripping + alias table; "AAPL", "Apple Inc.", "Apple Computer" all resolve to one node |
+| **Upgraded embeddings** | **New (Chunk 1)** | bge-small-en-v1.5 with automatic fallback to MiniLM-L6 |
+| Relationship engine | Done | Confidence, dedup, edge weighting, temporal stamps |
+| Graph visualisation | Done | React Flow — pan, zoom, expand to N hops, filter by edge type |
+| Hybrid search | Done | SQLite FTS keyword + cosine semantic + entity-name match |
+| AI Q&A | Done | OpenAI when `OPENAI_API_KEY` set; deterministic fallback otherwise |
+| Live monitoring | Basic | Watchlists + recent-mentions alert. Trend detection arrives in Chunk 2. |
+| Non-functional | Baseline | JWT auth, RBAC (`admin` / `analyst` / `user`), rate limiting, retries |
 
-## What's deferred (with extension hooks)
+## What's planned (next chunks)
 
-| Spec section | Why deferred | Extension hook |
-| --- | --- | --- |
-| Neo4j | Adds infra cost in MVP; SQL graph queries are sufficient under 10M edges | `backend/app/services/graph_service.py` is the single seam — implement `Neo4jGraphService` and inject |
-| Redis + BullMQ/Celery | APScheduler covers MVP throughput | `backend/app/jobs/scheduler.py` — swap to Celery by registering tasks in `app/jobs/celery_app.py` |
-| Elasticsearch | SQLite FTS + cosine is enough for 100k-1M articles | `backend/app/services/search_service.py` exposes the same interface |
-| Playwright JS-rendered crawl | `trafilatura` covers static HTML; add Playwright when sources need JS | `backend/app/services/ingest_service.py::_fetch_playwright` is stubbed |
-| Multilingual NLP | English-only models loaded | Swap spaCy model code in `nlp_service.py` |
+| Chunk | Features |
+| --- | --- |
+| **2** | Trend detection (z-score velocity + Kleinberg burst), hybrid search with cross-encoder reranking, typed relations via REBEL |
+| **3** | Community detection (Louvain/Leiden) with coloured clusters, timeline scrubber + velocity-weighted node sizing, storyline clustering |
 
 ## Quick start
 
 ### Prerequisites
-
 - Python 3.11+
 - Node.js 20+
 - (optional) Docker Desktop
@@ -66,15 +74,23 @@ docker compose up --build
 
 ### Seed sample data
 
-The first time the backend starts it auto-creates the SQLite database. To seed sample sources and run an immediate ingestion pass:
-
 ```bash
 cd backend
 .venv\Scripts\activate
 python -m app.seeds
 ```
 
-Then visit http://localhost:5000/graph.
+### Canonicalize existing entities (one-shot)
+
+If you're upgrading from a previous install, run the entity backfill once to merge duplicate nodes ("Apple", "Apple Inc.", "AAPL" → one node):
+
+```bash
+cd backend
+.venv\Scripts\activate
+python -m app.services.entity_backfill
+```
+
+Then visit http://localhost:5000/explore.
 
 ## Default users
 
@@ -94,16 +110,41 @@ Change these in production.
 News sources ──► Ingest (RSS / sitemap / URL)
                        │
                        ▼
-                APScheduler queue ──► NLP pipeline (spaCy + sbert)
-                                          │
+                APScheduler queue ──► NLP pipeline (spaCy + bge-small)
+                                          │       │
+                                          │       └─► Entity canonicalization (alias table)
                                           ▼
-                                    SQLite (articles, entities, relationships, embeddings)
+                                    SQLite (articles, entities, aliases, relationships, embeddings)
                                           │
                                           ▼
                                 FastAPI ─── React Flow graph
                                           ─── Search (FTS + semantic)
-                                          ─── AI summaries / Q&A
+                                          ─── AI Q&A
+                                          ─── Watchlists & alerts
 ```
+
+## Embedding model
+
+NewroSense defaults to **BAAI/bge-small-en-v1.5** (384-dim, ~130 MB, retrieves ~10–15 MTEB points better than the original MiniLM). If the model can't be downloaded, the service automatically falls back to `sentence-transformers/all-MiniLM-L6-v2` so the app keeps running.
+
+Override via env:
+
+```env
+EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+EMBEDDING_FALLBACK_MODEL=sentence-transformers/all-MiniLM-L6-v2
+```
+
+## Migration from "News Graph Platform"
+
+Existing SQLite files are named `newsgraph.db`. NewroSense uses `newrosense.db` by default. To keep your data:
+
+```bash
+mv backend/newsgraph.db backend/newrosense.db   # macOS/Linux
+move backend\newsgraph.db backend\newrosense.db # Windows
+python -m app.services.entity_backfill          # collapse duplicate entities
+```
+
+Or set `DATABASE_URL=sqlite:///./newsgraph.db` in `.env` to keep the old filename.
 
 ## API summary
 
@@ -112,9 +153,9 @@ News sources ──► Ingest (RSS / sitemap / URL)
 | POST | `/api/auth/register` | public | for analyst/user signups |
 | POST | `/api/auth/login` | public | returns JWT |
 | GET | `/api/articles` | user+ | paginated |
-| GET | `/api/articles/{id}` | user+ | single article + extracted entities |
+| GET | `/api/articles/{id}` | user+ | article + entities |
 | GET | `/api/entities` | user+ | search/filter by type |
-| GET | `/api/entities/{id}` | user+ | relationships, timeline, articles |
+| GET | `/api/entities/{id}` | user+ | relationships, timeline, articles, aliases |
 | GET | `/api/graph/{entity}` | user+ | subgraph (depth + filters) |
 | POST | `/api/search` | user+ | `{q, mode: keyword/semantic/entity}` |
 | POST | `/api/ask` | user+ | rule-based or OpenAI-backed Q&A |
@@ -130,23 +171,9 @@ Full schema is auto-published at http://localhost:8000/docs.
 ## Production notes
 
 - **Postgres** — change `DATABASE_URL` to `postgresql+psycopg://…` and run `alembic upgrade head` (Alembic stub included).
-- **Embeddings** — `sentence-transformers/all-MiniLM-L6-v2` loads on first use; ~80 MB.
+- **Embeddings** — bge-small-en-v1.5 (~130 MB) downloads on first use; MiniLM fallback (~80 MB) kicks in if that fails.
 - **Rate limiting** — `slowapi` middleware applies `60/minute` per IP by default.
 - **RBAC** — `admin`, `analyst`, `user`; enforced in router dependencies.
-
-## Roadmap (post-MVP)
-
-- Neo4j adapter
-- Playwright crawler for JS-heavy sites
-- HDBSCAN topic clustering
-- Multilingual spaCy models
-- WebSocket live alerts
-- Misinformation detection
-
-## Author
-
-Syed Hussnain Tahir Sherazi — Associate Data Engineer, Leicester, UK.
-[www.syedhussnain.com](https://www.syedhussnain.com) · [LinkedIn](https://uk.linkedin.com/in/hussnainsherazi) · contact@syedhussnain.co.uk
 
 ## License
 

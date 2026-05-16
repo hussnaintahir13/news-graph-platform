@@ -6,34 +6,59 @@ from ..auth import require_roles
 from ..db import get_db
 from ..models import Entity
 from ..schemas import ArticleOut, EntityCreate, EntityDetail, EntityOut, RelationshipOut
-from ..services import ai_service, graph_service
+from ..services import ai_service, entity_canonicalization, graph_service
 
 router = APIRouter(prefix="/api/entities", tags=["entities"])
-
-
-def _normalize(name: str) -> str:
-    import re
-    return re.sub(r"\s+", " ", name.strip().lower())
 
 
 @router.post("", response_model=EntityOut, dependencies=[Depends(require_roles("admin", "analyst"))])
 def create_entity(payload: EntityCreate, db: Session = Depends(get_db)):
     """Manually register an entity. Useful when NLP hasn't yet picked one up
-    or when the user wants to track a concept (e.g. 'missiles')."""
-    name_norm = _normalize(payload.name)
+    or when the user wants to track a concept (e.g. 'missiles').
+
+    The submitted name is run through the canonicalization pipeline so that
+    "Apple Inc." here matches "Apple" from the NLP extractor — there is one
+    canonical Entity row per real-world thing regardless of how it was created.
+    """
+    canonical = entity_canonicalization.resolve(db, payload.name, payload.type)
+    if not canonical.canonical_norm:
+        raise HTTPException(status_code=400, detail="Name does not normalize to anything usable")
+
+    # If canonicalization resolved to an existing entity via the alias table, return it.
+    if canonical.entity_id is not None:
+        existing = db.get(Entity, canonical.entity_id)
+        if existing is not None:
+            return existing
+
+    # Otherwise dedupe by the canonical (name_norm, type) key.
     existing = db.execute(
-        select(Entity).where(Entity.name_norm == name_norm, Entity.type == payload.type)
+        select(Entity).where(
+            Entity.name_norm == canonical.canonical_norm, Entity.type == payload.type
+        )
     ).scalar_one_or_none()
     if existing:
+        # Record the submitted surface form as an alias for future lookups.
+        if not canonical.is_canonical_surface:
+            entity_canonicalization.record_alias(
+                db, existing.id, payload.name, payload.type, source="manual"
+            )
+            db.commit()
         return existing
+
     ent = Entity(
-        name=payload.name.strip(),
-        name_norm=name_norm,
+        name=canonical.display_name or payload.name.strip(),
+        name_norm=canonical.canonical_norm,
         type=payload.type,
         description=payload.description,
         mentions=0,
+        wikidata_qid=canonical.wikidata_qid,
     )
     db.add(ent)
+    db.flush()
+    if not canonical.is_canonical_surface:
+        entity_canonicalization.record_alias(
+            db, ent.id, payload.name, payload.type, source="manual"
+        )
     db.commit()
     db.refresh(ent)
     return ent

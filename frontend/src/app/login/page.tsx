@@ -35,7 +35,7 @@ export default function LoginPage() {
           <IGraph size={22} className="text-white"/>
         </div>
         <h1 className="text-2xl font-bold">Welcome back</h1>
-        <p className="text-sm text-muted mt-1">Sign in to explore the news graph.</p>
+        <p className="text-sm text-muted mt-1">Sign in to NewroSense — perceptions, context, and details about news.</p>
       </div>
 
       <div className="card p-6">

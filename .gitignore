@@ -20,7 +20,8 @@ venv/
 # SQLite / data
 *.db
 *.db-journal
-backend/newsgraph.db
+backend/newrosense.db
+backend/newsgraph.db  # legacy filename, kept ignored for upgrade paths
 backend/data/
 
 # spaCy cache, models

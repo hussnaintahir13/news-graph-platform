@@ -36,7 +36,7 @@ export default function Navbar() {
                style={{ background: "linear-gradient(135deg, #3B82F6, #8B5CF6)" }}>
             <IGraph size={16} className="text-white"/>
           </div>
-          <span className="font-bold tracking-tight text-ink">News Graph</span>
+          <span className="font-bold tracking-tight text-ink">NewroSense</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-0.5">

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..models import Article, Entity
 from ..schemas import SearchHit
-from ..services.embedding_service import cosine, embed
+from ..services.embedding_service import cosine, embed_query
 
 
 def search(db: Session, q: str, mode: str, limit: int) -> list[SearchHit]:
@@ -45,7 +45,10 @@ def _entity(db: Session, q: str, limit: int) -> list[SearchHit]:
 
 
 def _semantic(db: Session, q: str, limit: int) -> list[SearchHit]:
-    qv = embed(q)
+    # Query goes through embed_query — for bge-style models this prepends the
+    # retrieval instruction prefix so query↔passage cosines match the training
+    # objective. For MiniLM-style models embed_query is equivalent to embed.
+    qv = embed_query(q)
     if not qv:
         return []
     rows = db.execute(

@@ -64,6 +64,35 @@ class Entity(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     embedding: Mapped[Optional[list[float]]] = mapped_column(JSON, nullable=True)
     mentions: Mapped[int] = mapped_column(Integer, default=0)
+    # Optional Wikidata QID (e.g. "Q312" for Apple Inc.). Populated when WIKIDATA_LOOKUP
+    # is enabled, otherwise left null. Indexed so we can dedupe across surface forms even
+    # when the textual normalizer can't tell them apart (e.g. cross-lingual aliases).
+    wikidata_qid: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class EntityAlias(Base):
+    """Surface forms that all resolve to a single canonical :class:`Entity`.
+
+    Populated by:
+      * the static alias table in ``services.entity_canonicalization``
+      * the on-line backfill (``services.entity_backfill``)
+      * Wikidata enrichment (when ``WIKIDATA_LOOKUP=true``)
+
+    The ``(alias_norm, type)`` unique constraint is the lookup hot-path: the NLP
+    pipeline normalizes a surface form and, before creating a new Entity row, asks
+    whether this alias already points to an existing canonical entity.
+    """
+
+    __tablename__ = "entity_aliases"
+    __table_args__ = (UniqueConstraint("alias_norm", "type", name="uq_alias_norm_type"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    entity_id: Mapped[str] = mapped_column(ForeignKey("entities.id", ondelete="CASCADE"), index=True)
+    alias_name: Mapped[str] = mapped_column(String(255))  # original surface form, casing preserved
+    alias_norm: Mapped[str] = mapped_column(String(255), index=True)  # strong-normalized key
+    type: Mapped[str] = mapped_column(String(40), index=True)
+    source: Mapped[str] = mapped_column(String(20), default="auto")  # static | spacy | wikidata | manual | backfill
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

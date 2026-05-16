@@ -21,7 +21,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Why does the first ingest take so long?",
-    a: "On first run, two models download from Hugging Face: the spaCy English model (~13 MB) and sentence-transformers/all-MiniLM-L6-v2 (~80 MB). After that, ingest is fast — typically <1 second per article.",
+    a: "On first run, models download from Hugging Face: the spaCy English model (~13 MB) and the embedding model — BAAI/bge-small-en-v1.5 (~130 MB) by default, or sentence-transformers/all-MiniLM-L6-v2 (~80 MB) as the automatic fallback. After that, ingest is fast — typically <1 second per article.",
   },
   {
     q: "How do watchlists and alerts work?",
@@ -43,7 +43,7 @@ export default function HowToPage() {
       {/* Hero */}
       <section className="text-center max-w-3xl mx-auto pt-4">
         <div className="badge-blue inline-flex">User guide</div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-3">How News Graph works</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mt-3">How NewroSense works</h1>
         <p className="text-muted mt-3">
           A guided tour from raw news feed to interactive entity graph — and answers to the questions people ask most.
         </p>
@@ -94,7 +94,7 @@ export default function HowToPage() {
       </section>
 
       <p className="text-center text-xs text-muted pt-2">
-        Built by Syed Hussnain · <a className="link" href="https://github.com/hussnaintahir13/news-graph-platform" target="_blank" rel="noreferrer">Source on GitHub</a>
+        Built by Syed Hussnain · <a className="link" href="https://github.com/hussnaintahir13/newrosense" target="_blank" rel="noreferrer">Source on GitHub</a>
       </p>
     </div>
   );

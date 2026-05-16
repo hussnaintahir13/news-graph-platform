@@ -60,7 +60,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                  style={{ background: "linear-gradient(135deg, #3B82F6, #8B5CF6)" }}>
               <IGraph size={16} className="text-white"/>
             </div>
-            <span className="font-bold">News Graph</span>
+            <span className="font-bold">NewroSense</span>
           </div>
           <button onClick={onClose} aria-label="Close menu" className="btn-ghost p-2 rounded-lg">
             <IX size={18}/>

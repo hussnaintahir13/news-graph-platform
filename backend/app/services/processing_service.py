@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..models import Alert, Article, Entity, Watchlist
-from ..services import graph_service, nlp_service
+from ..services import entity_canonicalization, graph_service, nlp_service
 from ..services.embedding_service import embed
 
 log = logging.getLogger(__name__)
@@ -30,12 +30,49 @@ def process_article(db: Session, article: Article) -> None:
     article.embedding = embed(article.title + ". " + article.content[:2000])
 
     # Upsert entities + article_entity links.
+    # ``name_to_id`` is keyed on the *raw spaCy norm* (the one in NlpResult) so that
+    # the relationship pass below can look entities up by the same key the NLP layer
+    # emitted. The actual Entity row, however, is upserted under the *canonical*
+    # name_norm produced by entity_canonicalization — so "Apple Inc." and "AAPL"
+    # collapse into a single row.
     name_to_id: dict[str, str] = {}
     for ent_mention, occurrences in result.entities:
-        ent = graph_service.upsert_entity(db, ent_mention.name, ent_mention.name_norm, ent_mention.type)
+        canonical = entity_canonicalization.resolve(db, ent_mention.name, ent_mention.type)
+        if not canonical.canonical_norm:
+            continue
+
+        if canonical.entity_id is not None:
+            # Stage 3 hit — alias table told us which canonical entity to reuse.
+            ent = db.get(Entity, canonical.entity_id)
+        else:
+            ent = None
+
+        if ent is None:
+            ent = graph_service.upsert_entity(
+                db,
+                canonical.display_name,
+                canonical.canonical_norm,
+                ent_mention.type,
+            )
+
+        # Wikidata QID stamping is one-shot per entity.
+        if canonical.wikidata_qid and not ent.wikidata_qid:
+            ent.wikidata_qid = canonical.wikidata_qid
+
         ent.mentions = (ent.mentions or 0) + occurrences
         if not ent.embedding:
             ent.embedding = embed(ent.name)
+
+        # Persist the alias mapping so the next article that says "AAPL" skips
+        # straight to stage 3 instead of re-running the static lookup.
+        # Skip when the surface form already matches the canonical norm — that's
+        # not really an alias, just the canonical name itself.
+        if not canonical.is_canonical_surface:
+            entity_canonicalization.record_alias(
+                db, ent.id, ent_mention.name, ent_mention.type,
+                source=canonical.alias_source if canonical.alias_source != "normalized" else "spacy",
+            )
+
         graph_service.upsert_article_entity(db, article.id, ent.id, occurrences)
         name_to_id[ent_mention.name_norm] = ent.id
 

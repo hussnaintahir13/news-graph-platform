@@ -4,7 +4,9 @@ import type {
 } from "@/types";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-const STORAGE_KEY = "newsgraph_auth";
+// Storage key is versioned so the rebrand from news-graph → newrosense automatically
+// invalidates stale tokens (previous key was "newsgraph_auth").
+const STORAGE_KEY = "newrosense_auth";
 
 export function getAuth(): AuthState | null {
   if (typeof window === "undefined") return null;

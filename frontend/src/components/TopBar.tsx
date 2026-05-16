@@ -39,7 +39,7 @@ export default function TopBar({ onMenuClick }: Props) {
                  style={{ background: "linear-gradient(135deg, #3B82F6, #8B5CF6)" }}>
               <IGraph size={16} className="text-white"/>
             </div>
-            <span className="font-bold tracking-tight text-ink hidden sm:inline">News Graph</span>
+            <span className="font-bold tracking-tight text-ink hidden sm:inline">NewroSense</span>
           </Link>
         </div>
 

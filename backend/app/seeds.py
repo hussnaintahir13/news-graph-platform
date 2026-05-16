@@ -50,7 +50,7 @@ def seed() -> None:
         db.commit()
         log.info("seeded default users and sources")
 
-        print("Running an initial ingest pass (this can take a few minutes)…")
+        print("NewroSense — running an initial ingest pass (this can take a few minutes)…")
         n_ingested = ingest_service.ingest_all(db)
         print(f"Ingested {n_ingested} new articles.")
         print("Running NLP processing…")

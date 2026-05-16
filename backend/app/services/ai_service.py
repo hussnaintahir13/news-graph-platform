@@ -13,7 +13,7 @@ from ..config import settings
 from ..models import Article, ArticleEntity, Entity, Relationship_
 from ..schemas import ArticleOut, AskResponse, EntityOut, HypothesisResponse, PairAnalysis
 from ..services import graph_service
-from ..services.embedding_service import cosine, embed
+from ..services.embedding_service import cosine, embed_query
 from ..services.search_service import _semantic
 
 log = logging.getLogger(__name__)
@@ -88,7 +88,8 @@ def answer_question(db: Session, question: str) -> AskResponse:
     ordered_articles = [art_map[i] for i in article_ids if i in art_map]
 
     # 2. Try to spot named entities in the question to scope context.
-    qv = embed(question)
+    # Use embed_query so bge-style models get their retrieval instruction prefix.
+    qv = embed_query(question)
     candidate_entities: list[tuple[Entity, float]] = []
     if qv:
         ents = db.execute(select(Entity).where(Entity.embedding.is_not(None)).limit(2000)).scalars().all()

@@ -18,7 +18,7 @@ from ..models import Article, Source
 log = logging.getLogger(__name__)
 
 DEFAULT_HEADERS = {
-    "User-Agent": "NewsGraphBot/1.0 (+https://github.com/hussnaintahir13)"
+    "User-Agent": "NewroSenseBot/0.2 (+https://github.com/hussnaintahir13/newrosense)"
 }
 FETCH_TIMEOUT = 20.0
 MAX_PER_SOURCE = 25

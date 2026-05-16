@@ -1,12 +1,20 @@
+name: newrosense
+
 services:
   backend:
     build: ./backend
+    image: newrosense-backend:0.2
+    container_name: newrosense-backend
     environment:
-      - DATABASE_URL=sqlite:////app/data/newsgraph.db
+      - DATABASE_URL=sqlite:////app/data/newrosense.db
       - CORS_ORIGINS=http://localhost:5000
       - JWT_SECRET=${JWT_SECRET:-please-change-me-in-prod}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - SCHEDULER_ENABLED=true
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-BAAI/bge-small-en-v1.5}
+      - EMBEDDING_FALLBACK_MODEL=${EMBEDDING_FALLBACK_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      - EMBEDDING_FORCE_FALLBACK=${EMBEDDING_FORCE_FALLBACK:-false}
+      - WIKIDATA_LOOKUP=${WIKIDATA_LOOKUP:-false}
     volumes:
       - backend_data:/app/data
     ports:
@@ -14,6 +22,8 @@ services:
 
   frontend:
     build: ./frontend
+    image: newrosense-frontend:0.2
+    container_name: newrosense-frontend
     environment:
       - NEXT_PUBLIC_API_BASE=http://localhost:8000
     ports:
